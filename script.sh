@@ -1,176 +1,112 @@
 #!/bin/bash
 
-# ----------------------
+# -------------------------------
 # Meteor Azure
-# Version: 1.4.5
-# ----------------------
+# Server initialisation script
+# -------------------------------
 
-# ----------------------
-# KUDU Deployment Script
-# Version: 1.0.8
-# ----------------------
+BUNDLE_DIR="D:/home/meteor-azure"
+BUNDLE_DIR_CMD="${HOME}/meteor-azure"
+NVM_VERSION="1.1.4"
 
-# Environment
-# ------
+function print { echo "meteor-azure: ${1}"; }
 
-SCRIPT_DIR="${BASH_SOURCE[0]%\\*}"
-SCRIPT_DIR="${SCRIPT_DIR%/*}"
-ARTIFACTS=$SCRIPT_DIR/../artifacts
-
-if [[ ! -n "$DEPLOYMENT_SOURCE" ]]; then
-  DEPLOYMENT_SOURCE=$SCRIPT_DIR
-fi
-
-if [[ ! -n "$DEPLOYMENT_TARGET" ]]; then
-  DEPLOYMENT_TARGET=$ARTIFACTS/wwwroot
-else
-  KUDU_SERVICE=true
-fi
-
-# Validate configuration
-if [ -e "$DEPLOYMENT_SOURCE\.config\azure\iisnode.yml" ]; then
-  echo "meteor-azure: WARNING! iisnode.yml will not be respected, please move configuration to web.config"
-fi
-if [ ! -e "$DEPLOYMENT_SOURCE\.config\azure\web.config" ]; then
-  echo "meteor-azure: WARNING! No web.config was found (app may not start properly)"
-fi
-if [ $SCM_COMMAND_IDLE_TIMEOUT != 7200 ]; then
-  echo "meteor-azure: WARNING! Not using recommended 'SCM_COMMAND_IDLE_TIMEOUT' (build may abort unexpectedly)"
-fi
-if [[ -v METEOR_AZURE_NOCACHE ]]; then
-  echo "meteor-azure: WARNING! 'METEOR_AZURE_NOCACHE' is enabled (this will increase build times)"
-fi
-if [ ! -d "$DEPLOYMENT_SOURCE\\$METEOR_AZURE_ROOT.meteor" ]; then
-  echo "meteor-azure: ERROR! Could not find Meteor project directory (consider specifying 'METEOR_AZURE_ROOT')"
+function error_exit {
+  # Display error message and exit
+  echo "meteor-azure: ${1:-"Unknown Error"}" 1>&2
   exit 1
-fi
-if [[ ! -v METEOR_AZURE_NODE_VERSION ]]; then
-  echo "meteor-azure: ERROR! You must specify App Setting 'METEOR_AZURE_NODE_VERSION'"
-  exit 1
-fi
-if [[ ! -v METEOR_AZURE_NPM_VERSION ]]; then
-  echo "meteor-azure: ERROR! You must specify App Setting 'METEOR_AZURE_NPM_VERSION'"
-  exit 1
-fi
-if [[ ! -v ROOT_URL ]]; then
-  echo "meteor-azure: ERROR! You must specify App Setting 'ROOT_URL'"
-  exit 1
-fi
+}
 
-# Prepare cache directory
-if [[ -v METEOR_AZURE_NOCACHE && -d D:/home/meteor-azure ]]; then
-  echo meteor-azure: Clearing cache
-  rm -rf D:/home/meteor-azure
-fi
-if [ ! -d D:/home/meteor-azure ]; then
-  mkdir D:/home/meteor-azure
-fi
+# -------------------------------
+# Prerequisites
+# -------------------------------
 
-# Setup
-# ------------
-
-cd D:/home/meteor-azure;
-
-# Install Meteor
-if [ ! -e .meteor/meteor.bat ]; then
-  echo meteor-azure: Installing Meteor
-  curl -L -o meteor.tar.gz "https://packages.meteor.com/bootstrap-link?arch=os.windows.x86_32"
-  tar -zxf meteor.tar.gz
-  rm meteor.tar.gz
-fi
-export PATH="$HOME/meteor-azure/.meteor:$PATH"
+cd "${BUNDLE_DIR}" || error_exit "Could not find bundle directory"
 
 # Install NVM
-if [ ! -d nvm ]; then
-  echo meteor-azure: Installing NVM
-  curl -L -o nvm-noinstall.zip "https://github.com/coreybutler/nvm-windows/releases/download/1.1.1/nvm-noinstall.zip"
-  unzip nvm-noinstall.zip -d nvm
-  rm nvm-noinstall.zip
-  (echo root: D:/home/meteor-azure/nvm && echo proxy: none) > nvm/settings.txt
+if [ ! -e "nvm/nvm.exe" ]; then
+  print "Installing NVM"
+  curl -L -o "nvm-noinstall.zip" \
+      "https://github.com/coreybutler/nvm-windows/releases/download/${NVM_VERSION}/nvm-noinstall.zip"
+  unzip "nvm-noinstall.zip" -d "nvm"
+  rm "nvm-noinstall.zip"
 fi
+(echo "root: ${BUNDLE_DIR}/nvm" && echo "proxy: none") > "nvm/settings.txt" || error_exit "Could not set NVM settings"
+export NVM_HOME="${BUNDLE_DIR}/nvm"
+if [ "$(nvm/nvm.exe version)" != "${NVM_VERSION}" ]; then error_exit "Could not install NVM"; fi
+print "Now using NVM v$(nvm/nvm.exe version)"
 
 # Install custom Node
-echo meteor-azure: Setting Node version
-export NVM_HOME=D:/home/meteor-azure/nvm
-nvm/nvm.exe install $METEOR_AZURE_NODE_VERSION 32
-if [ ! -e "nvm/v$METEOR_AZURE_NODE_VERSION/node.exe" ]; then
-  cp "nvm/v$METEOR_AZURE_NODE_VERSION/node32.exe" "nvm/v$METEOR_AZURE_NODE_VERSION/node.exe"
+print "Setting Node version"
+nvm/nvm.exe install "${METEOR_AZURE_NODE_VERSION}" 32
+if [ ! -e "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe" ]; then
+  cp "nvm/${METEOR_AZURE_NODE_VERSION}/node32.exe" "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe"
 fi
-export PATH="$HOME/meteor-azure/nvm/v$METEOR_AZURE_NODE_VERSION:$PATH"
-echo "meteor-azure: Now using Node $(node -v) (32-bit)"
+export PATH="${BUNDLE_DIR_CMD}/nvm/${METEOR_AZURE_NODE_VERSION}:${PATH}"
+if [ "$(node -v)" != "${METEOR_AZURE_NODE_VERSION}" ]; then error_exit "Could not install Node"; fi
+print "Now using Node $(node -v) (32-bit)"
 
 # Install custom NPM
-echo meteor-azure: Setting NPM version
-if [ "$(npm -v)" != "$METEOR_AZURE_NPM_VERSION" ]; then
-  cmd //c npm install -g "npm@$METEOR_AZURE_NPM_VERSION"
+if [ "$(npm -v)" != "${METEOR_AZURE_NPM_VERSION}" ]; then
+  print "Setting NPM version"
+  cmd //c npm install -g "npm@${METEOR_AZURE_NPM_VERSION}" || error_exit "Could not install NPM"
 fi
-echo "meteor-azure: Now using NPM v$(npm -v)"
+print "Now using NPM v$(npm -v)"
 
 # Install JSON tool
 if ! hash json 2>/dev/null; then
-  echo meteor-azure: Installing JSON tool
-  npm install -g json
+  print "Installing JSON tool"
+  npm install -g json || error_exit "Could not install JSON tool"
 fi
 
-# Validate setup
-if [ "$(node -v)" != "v$METEOR_AZURE_NODE_VERSION" ]; then
-  echo "ERROR! Could not install Node"
-  exit 1
-fi
-if [ "$(npm -v)" != "$METEOR_AZURE_NPM_VERSION" ]; then
-  echo "ERROR! Could not install NPM"
-  exit 1
-fi
-if ! hash json 2>/dev/null; then
-  echo "ERROR! Could not install JSON tool"
-  exit 1
+# Install rimraf tool
+if ! hash rimraf 2>/dev/null; then
+  print "Installing rimraf tool"
+  npm install -g rimraf || error_exit "Could not install rimraf tool"
 fi
 
-# Compilation
-# ------------
+# -------------------------------
+# Configuration
+# -------------------------------
 
-cd "$DEPLOYMENT_SOURCE\\$METEOR_AZURE_ROOT"
+cd "${DEPLOYMENT_TEMP}" || error_exit "Could not find working directory"
 
-# Install NPM dependencies
-echo meteor-azure: Installing NPM dependencies
-npm prune --production
-npm install --production
-
-# Generate Meteor build
-if [ -d "$DEPLOYMENT_TEMP\bundle" ]; then
-  echo meteor-azure: Cleaning build directory
-  rm -rf "$DEPLOYMENT_TEMP\bundle"
+# Unpack bundle
+if [ -d "bundle" ]; then
+  print "Clearing old bundle"
+  rimraf "bundle" || error_exit "Could not clear old bundle"
 fi
-echo meteor-azure: Building app
-cmd //c meteor build "%DEPLOYMENT_TEMP%" --directory --server-only
-if [ ! -e "$DEPLOYMENT_TEMP\bundle\programs\server\package.json" ]; then
-  echo "meteor-azure: ERROR! Could not generate Meteor bundle"
-  exit 1
-fi
-cp "$DEPLOYMENT_SOURCE\.config\azure\web.config" "$DEPLOYMENT_TEMP\bundle"
+print "Unpacking bundle"
+tar -xzf "${BUNDLE_DIR_CMD}/bundle.tar.gz" || error_exit "Could not unpack bundle"
+
+# Set entry point
+print "Setting entry-point"
+pushd "bundle/programs/server" || error_exit "Could not find compatible bundle"
+json -f "package.json" -e "this.main='../../main.js';this.scripts={ start: 'node ../../main' }" > "temp-package.json"
+rm "package.json"
+cmd //c rename "temp-package.json" "package.json" || error_exit "Could not set entry point"
+popd || error_exit "Could not return to working directory"
 
 # Set Node runtime
-echo meteor-azure: Setting Node runtime
-cd "$DEPLOYMENT_TEMP\bundle"
-(echo nodeProcessCommandLine: "D:\home\meteor-azure\nvm\v$METEOR_AZURE_NODE_VERSION\node.exe") > iisnode.yml
+print "Setting Node runtime"
+(echo "nodeProcessCommandLine: ${BUNDLE_DIR_CMD}/nvm/${METEOR_AZURE_NODE_VERSION}/node.exe") > "bundle/iisnode.yml" \
+    || error_exit "Could not set Node runtime"
 
-# Set entry-point
-echo meteor-azure: Setting entry-point
-cd "$DEPLOYMENT_TEMP\bundle\programs\server"
-json -f package.json -e "this.main='../../main.js';this.scripts={ start: 'node ../../main' }" > temp-package.json
-rm package.json
-cmd //c rename temp-package.json package.json
+# -------------------------------
+# Startup
+# -------------------------------
 
-# Deployment
-# ----------
+cd "${DEPLOYMENT_TARGET}" || error_exit "Could not find target directory"
 
 # Sync bundle
-echo meteor-azure: Deploying bundle
-robocopy "$DEPLOYMENT_TEMP\bundle" $DEPLOYMENT_TARGET //mt //mir //nfl //ndl //njh //njs //nc //ns //np > /dev/null
+print "Syncing bundle"
+robocopy "${DEPLOYMENT_TEMP}\bundle" "." //mt //mir > /dev/null
+if [ $? -ge 8 ]; then error_exit "Could not sync bundle"; fi # handle special robocopy exit codes
 
-# Install Meteor server
-echo meteor-azure: Installing Meteor server
-cd "$DEPLOYMENT_TARGET\programs\server"
+# Install NPM dependencies
+print "Installing NPM dependencies"
+pushd "programs/server"
 npm install --production
+popd || error_exit "Could not return to target directory"
 
-echo meteor-azure: Finished successfully
+print "Finished successfully"
