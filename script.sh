@@ -80,14 +80,6 @@ fi
 print "Unpacking bundle"
 tar -xzf "${BUNDLE_DIR_CMD}/bundle.tar.gz" || error_exit "Could not unpack bundle"
 
-# Set entry point
-print "Setting entry-point"
-pushd "bundle/programs/server" || error_exit "Could not find compatible bundle"
-json -f "package.json" -e "this.main='../../main.js';this.scripts={ start: 'node ../../main' }" > "temp-package.json"
-rm "package.json"
-cmd //c rename "temp-package.json" "package.json" || error_exit "Could not set entry point"
-popd || error_exit "Could not return to working directory"
-
 # Set Node runtime
 print "Setting Node runtime"
 (echo "nodeProcessCommandLine: ${BUNDLE_DIR_CMD}/nvm/${METEOR_AZURE_NODE_VERSION}/node.exe") > "bundle/iisnode.yml" \
@@ -107,7 +99,13 @@ if [ $? -ge 8 ]; then error_exit "Could not sync bundle"; fi # handle special ro
 # Install NPM dependencies
 print "Installing NPM dependencies"
 pushd "programs/server"
-npm install --production
+npm install --production || error_exit "Could not install NPM dependencies"
+popd || error_exit "Could not return to target directory"
+
+# Rebuild NPM dependencies
+print "Rebuilding NPM dependencies"
+pushd "programs/server/npm"
+npm rebuild --update-binary || error_exit "Could not rebuild NPM dependencies"
 popd || error_exit "Could not return to target directory"
 
 print "Finished successfully"
