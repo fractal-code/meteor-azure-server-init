@@ -54,12 +54,6 @@ if [ "$(npm -v)" != "${METEOR_AZURE_NPM_VERSION}" ]; then
 fi
 print "Now using NPM v$(npm -v)"
 
-# Install JSON tool
-if ! hash json 2>/dev/null; then
-  print "Installing JSON tool"
-  npm install -g json || error_exit "Could not install JSON tool"
-fi
-
 # Install rimraf tool
 if ! hash rimraf 2>/dev/null; then
   print "Installing rimraf tool"
