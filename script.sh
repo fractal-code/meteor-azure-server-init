@@ -80,6 +80,12 @@ fi
 print "Unpacking bundle"
 tar -xzf "${BUNDLE_DIR_CMD}/bundle.tar.gz" || error_exit "Could not unpack bundle"
 
+# Ensure web config is set
+if [ ! -e "bundle/web.config" ]; then
+  print "Using default web config"
+  cp "${DEPLOYMENT_SOURCE}/web.config" "bundle/web.config" || error_exit "Could not set web config"
+fi
+
 # Set Node runtime
 print "Setting Node runtime"
 (echo "nodeProcessCommandLine: ${BUNDLE_DIR}/nvm/${METEOR_AZURE_NODE_VERSION}/node.exe") > "bundle/iisnode.yml" \
