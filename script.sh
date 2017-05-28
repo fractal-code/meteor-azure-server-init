@@ -61,7 +61,7 @@ if ! hash rimraf 2>/dev/null; then
 fi
 
 # -------------------------------
-# Configuration
+# Setup
 # -------------------------------
 
 cd "${DEPLOYMENT_TEMP}" || error_exit "Could not find working directory"
@@ -85,6 +85,18 @@ print "Setting Node runtime"
 (echo "nodeProcessCommandLine: ${BUNDLE_DIR}/nvm/${METEOR_AZURE_NODE_VERSION}/node.exe") > "bundle/iisnode.yml" \
     || error_exit "Could not set Node runtime"
 
+# Install NPM dependencies
+print "Installing NPM dependencies"
+pushd "bundle/programs/server"
+npm install --production || error_exit "Could not install NPM dependencies"
+popd || error_exit "Could not return to working directory"
+
+# Rebuild NPM dependencies
+print "Rebuilding NPM dependencies"
+pushd "bundle/programs/server/npm"
+npm rebuild --update-binary || error_exit "Could not rebuild NPM dependencies"
+popd || error_exit "Could not return to working directory"
+
 # -------------------------------
 # Startup
 # -------------------------------
@@ -95,17 +107,5 @@ cd "${DEPLOYMENT_TARGET}" || error_exit "Could not find target directory"
 print "Syncing bundle"
 robocopy "${DEPLOYMENT_TEMP}\bundle" "." //mt //mir > /dev/null
 if [ $? -ge 8 ]; then error_exit "Could not sync bundle"; fi # handle special robocopy exit codes
-
-# Install NPM dependencies
-print "Installing NPM dependencies"
-pushd "programs/server"
-cmd //c npm install --production || error_exit "Could not install NPM dependencies"
-popd || error_exit "Could not return to target directory"
-
-# Rebuild NPM dependencies
-print "Rebuilding NPM dependencies"
-pushd "programs/server/npm"
-cmd //c npm rebuild --update-binary || error_exit "Could not rebuild NPM dependencies"
-popd || error_exit "Could not return to target directory"
 
 print "Finished successfully"
