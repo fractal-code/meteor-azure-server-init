@@ -99,13 +99,13 @@ if [ $? -ge 8 ]; then error_exit "Could not sync bundle"; fi # handle special ro
 # Install NPM dependencies
 print "Installing NPM dependencies"
 pushd "programs/server"
-npm install --production || error_exit "Could not install NPM dependencies"
+cmd //c npm install --production || error_exit "Could not install NPM dependencies"
 popd || error_exit "Could not return to target directory"
 
 # Rebuild NPM dependencies
 print "Rebuilding NPM dependencies"
 pushd "programs/server/npm"
-npm rebuild --update-binary || error_exit "Could not rebuild NPM dependencies"
+cmd //c npm rebuild --update-binary || error_exit "Could not rebuild NPM dependencies"
 popd || error_exit "Could not return to target directory"
 
 print "Finished successfully"
