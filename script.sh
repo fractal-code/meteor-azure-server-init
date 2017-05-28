@@ -25,15 +25,15 @@ function error_exit {
 cd "${BUNDLE_DIR}" || error_exit "Could not find bundle directory"
 
 # Install NVM
-if [ ! -e "nvm/nvm.exe" ]; then
+export NVM_HOME="${BUNDLE_DIR}/nvm"
+(echo "root: ${BUNDLE_DIR}/nvm" && echo "proxy: none") > "nvm/settings.txt" || error_exit "Could not set NVM settings"
+if [ ! -e "nvm/nvm.exe" ] || [ "$(nvm/nvm.exe version)" != "${NVM_VERSION}" ]; then
   print "Installing NVM"
   curl -L -o "nvm-noinstall.zip" \
       "https://github.com/coreybutler/nvm-windows/releases/download/${NVM_VERSION}/nvm-noinstall.zip"
-  unzip "nvm-noinstall.zip" -d "nvm"
+  unzip -o "nvm-noinstall.zip" -d "nvm"
   rm "nvm-noinstall.zip"
 fi
-(echo "root: ${BUNDLE_DIR}/nvm" && echo "proxy: none") > "nvm/settings.txt" || error_exit "Could not set NVM settings"
-export NVM_HOME="${BUNDLE_DIR}/nvm"
 if [ "$(nvm/nvm.exe version)" != "${NVM_VERSION}" ]; then error_exit "Could not install NVM"; fi
 print "Now using NVM v$(nvm/nvm.exe version)"
 
