@@ -26,6 +26,7 @@ cd "${BUNDLE_DIR}" || error_exit "Could not find bundle directory"
 
 # Install NVM
 export NVM_HOME="${BUNDLE_DIR}/nvm"
+if [ ! -d "nvm" ]; then mkdir "nvm"; fi
 (echo "root: ${BUNDLE_DIR}/nvm" && echo "proxy: none") > "nvm/settings.txt" || error_exit "Could not set NVM settings"
 if [ ! -e "nvm/nvm.exe" ] || [ "$(nvm/nvm.exe version)" != "${NVM_VERSION}" ]; then
   print "Installing NVM"
