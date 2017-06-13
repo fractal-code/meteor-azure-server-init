@@ -73,7 +73,7 @@ if [ -d "bundle" ]; then
   rimraf "bundle" || error_exit "Could not clear old bundle"
 fi
 print "Unpacking bundle"
-tar -xzf "${BUNDLE_DIR_CMD}/bundle.tar.gz" || error_exit "Could not unpack bundle"
+tar -xzf "${BUNDLE_DIR_CMD}/bundle.tar.gz" --warning="no-unknown-keyword" || error_exit "Could not unpack bundle"
 
 # Ensure web config is set
 if [ ! -e "bundle/web.config" ]; then
