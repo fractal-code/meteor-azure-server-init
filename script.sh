@@ -64,7 +64,7 @@ fi
 # Install global node-pre-gyp
 if ! hash node-pre-gyp 2>/dev/null; then
   print "Installing global node-pre-gyp"
-  npm install -g node-pre-gyp || error_exit "Could not install node-pre-gyp"
+  npm install -g node-pre-gyp@0.8.0 || error_exit "Could not install node-pre-gyp"
 fi
 
 # -------------------------------
