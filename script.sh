@@ -38,18 +38,17 @@ fi
 if [ "$(nvm/nvm.exe version)" != "${NVM_VERSION}" ]; then error_exit "Could not install NVM"; fi
 print "Now using NVM v$(nvm/nvm.exe version)"
 
-# Handle missing Node architecture, maintains backwards compatibility with old 32-bit default
+# Handle missing Node architecture, maintains backwards compatibility with 32-bit default
 if [ ${METEOR_AZURE_NODE_ARCH} != '64' ]; then METEOR_AZURE_NODE_ARCH='32'; fi
-if [ -e "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe" ]; then
-  rm "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe"
-fi
 
 # Install custom Node
-print "Setting Node to v${METEOR_AZURE_NODE_VERSION} ${METEOR_AZURE_NODE_ARCH}-bit"
+print "Setting Node to ${METEOR_AZURE_NODE_VERSION} ${METEOR_AZURE_NODE_ARCH}-bit"
+if [ -e "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe" ]; then rm "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe"; fi
 nvm/nvm.exe install "${METEOR_AZURE_NODE_VERSION}" "${METEOR_AZURE_NODE_ARCH}"
+cp "nvm/${METEOR_AZURE_NODE_VERSION}/node${METEOR_AZURE_NODE_ARCH}.exe" "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe"
 export PATH="${BUNDLE_DIR_CMD}/nvm/${METEOR_AZURE_NODE_VERSION}:${PATH}"
-if [ "$(node${METEOR_AZURE_NODE_ARCH} -v)" != "${METEOR_AZURE_NODE_VERSION}" ]; then error_exit "Could not install Node"; fi
-print "Now using Node $(node${METEOR_AZURE_NODE_ARCH} -v) (${METEOR_AZURE_NODE_ARCH}-bit)"
+if [ "$(node -v)" != "${METEOR_AZURE_NODE_VERSION}" ]; then error_exit "Could not install Node"; fi
+print "Now using Node $(node -v) (${METEOR_AZURE_NODE_ARCH}-bit)"
 
 # Install custom NPM
 if [ "$(npm -v)" != "${METEOR_AZURE_NPM_VERSION}" ]; then
@@ -59,7 +58,7 @@ if [ "$(npm -v)" != "${METEOR_AZURE_NPM_VERSION}" ]; then
   cmd //c move npm npm2 || echo 'Found remanent files - resuming installation'
   cmd //c move "npm.cmd" "npm2.cmd" || echo 'Found remanent files - resuming installation'
   cmd //c move "node_modules/npm" "node_modules/npm2" || echo 'Found remanent files - resuming installation'
-  node${METEOR_AZURE_NODE_ARCH} "node_modules/npm2/bin/npm-cli.js" i "npm@${METEOR_AZURE_NPM_VERSION}" -g || "Could not install custom NPM"
+  node "node_modules/npm2/bin/npm-cli.js" i "npm@${METEOR_AZURE_NPM_VERSION}" -g || "Could not install custom NPM"
   rm npm2
   rm "npm2.cmd"
   rm -rf "node_modules/npm2"
@@ -99,7 +98,7 @@ fi
 
 # Set Node runtime
 print "Setting Node runtime"
-(echo "nodeProcessCommandLine: ${BUNDLE_DIR}/nvm/${METEOR_AZURE_NODE_VERSION}/node${METEOR_AZURE_NODE_ARCH}.exe") \
+(echo "nodeProcessCommandLine: ${BUNDLE_DIR}/nvm/${METEOR_AZURE_NODE_VERSION}/node.exe") \
   >> "bundle/iisnode.yml" || error_exit "Could not set Node runtime"
 
 # Enable IISNode logging  
