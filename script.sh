@@ -38,8 +38,11 @@ fi
 if [ "$(nvm/nvm.exe version)" != "${NVM_VERSION}" ]; then error_exit "Could not install NVM"; fi
 print "Now using NVM v$(nvm/nvm.exe version)"
 
-# Set default architecture (to maintain backwards compatibility)
+# Handle missing Node architecture, maintains backwards compatibility with old 32-bit default
 if [ ${METEOR_AZURE_NODE_ARCH} != '64' ]; then METEOR_AZURE_NODE_ARCH='32'; fi
+if [ -e "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe" ]; then
+  rm "nvm/${METEOR_AZURE_NODE_VERSION}/node.exe"
+fi
 
 # Install custom Node
 print "Setting Node to v${METEOR_AZURE_NODE_VERSION} ${METEOR_AZURE_NODE_ARCH}-bit"
