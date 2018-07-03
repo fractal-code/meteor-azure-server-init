@@ -3,7 +3,7 @@
 # -------------------------------
 # Meteor Azure
 # Server initialisation script
-# Version: 1.3.0
+# Version: 1.3.1
 # -------------------------------
 
 BUNDLE_DIR="D:/home/meteor-azure"
