@@ -39,7 +39,7 @@ if [ "$(nvm/nvm.exe version)" != "${NVM_VERSION}" ]; then error_exit "Could not 
 print "Now using NVM v$(nvm/nvm.exe version)"
 
 # Handle missing Node architecture, maintains backwards compatibility with 32-bit default
-if [ ${METEOR_AZURE_NODE_ARCH} != '64' ]; then METEOR_AZURE_NODE_ARCH='32'; fi
+if [ "${METEOR_AZURE_NODE_ARCH}" != "64" ]; then METEOR_AZURE_NODE_ARCH="32"; fi
 
 # Install custom Node
 print "Setting Node to ${METEOR_AZURE_NODE_VERSION} ${METEOR_AZURE_NODE_ARCH}-bit"
@@ -55,9 +55,9 @@ if [ "$(npm -v)" != "${METEOR_AZURE_NPM_VERSION}" ]; then
   print "Setting NPM version"
   # Apply workaround for https://github.com/coreybutler/nvm-windows/issues/300
   pushd "nvm/${METEOR_AZURE_NODE_VERSION}"
-  cmd //c move npm npm2 || echo 'Found remanent files - resuming installation'
-  cmd //c move "npm.cmd" "npm2.cmd" || echo 'Found remanent files - resuming installation'
-  cmd //c move "node_modules/npm" "node_modules/npm2" || echo 'Found remanent files - resuming installation'
+  cmd //c move npm npm2 || echo "Found remanent files - resuming installation"
+  cmd //c move "npm.cmd" "npm2.cmd" || echo "Found remanent files - resuming installation"
+  cmd //c move "node_modules/npm" "node_modules/npm2" || echo "Found remanent files - resuming installation"
   node "node_modules/npm2/bin/npm-cli.js" i "npm@${METEOR_AZURE_NPM_VERSION}" -g || "Could not install custom NPM"
   rm npm2
   rm "npm2.cmd"
@@ -126,6 +126,6 @@ cd "${DEPLOYMENT_TARGET}" || error_exit "Could not find target directory"
 # Sync bundle
 print "Syncing bundle"
 robocopy "${DEPLOYMENT_TEMP}\bundle" "." //mt //mir > /dev/null
-if [ $? -ge 8 ]; then error_exit "Could not sync bundle"; fi # handle special robocopy exit codes
+if [ "${?}" -ge 8 ]; then error_exit "Could not sync bundle"; fi # handle special robocopy exit codes
 
 print "Finished successfully"
