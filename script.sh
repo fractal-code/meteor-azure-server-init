@@ -74,7 +74,7 @@ fi
 
 # Install global node-pre-gyp
 print "Installing global node-pre-gyp"
-npm install -g node-pre-gyp@0.9.1 || error_exit "Could not install node-pre-gyp"
+npm install -g node-pre-gyp@0.12.0 || error_exit "Could not install node-pre-gyp"
 
 # -------------------------------
 # Setup
