@@ -8,7 +8,7 @@
 
 BUNDLE_DIR="D:/home/meteor-azure"
 BUNDLE_DIR_CMD="${HOME}/meteor-azure"
-NVM_VERSION="1.1.4"
+NVM_VERSION="1.1.7"
 
 function print { echo "meteor-azure: ${1}"; }
 
