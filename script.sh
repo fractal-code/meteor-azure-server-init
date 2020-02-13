@@ -55,12 +55,9 @@ if [ "$(npm -v)" != "${METEOR_AZURE_NPM_VERSION}" ]; then
   print "Setting NPM version"
   # Apply workaround for https://github.com/coreybutler/nvm-windows/issues/300
   pushd "nvm/${METEOR_AZURE_NODE_VERSION}"
-  cmd //c move npm npm2 || echo "Found remanent files - resuming installation"
-  cmd //c move "npm.cmd" "npm2.cmd" || echo "Found remanent files - resuming installation"
+  rm npm npx npm.cmd npx.cmd
   cmd //c move "node_modules/npm" "node_modules/npm2" || echo "Found remanent files - resuming installation"
   node "node_modules/npm2/bin/npm-cli.js" i "npm@${METEOR_AZURE_NPM_VERSION}" -g || "Could not install custom NPM"
-  rm npm2
-  rm "npm2.cmd"
   rm -rf "node_modules/npm2"
   popd || error_exit "Could not return to working directory"
 fi
