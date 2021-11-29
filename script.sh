@@ -71,7 +71,7 @@ fi
 
 # Install global node-pre-gyp
 print "Installing global node-pre-gyp"
-npm install -g node-pre-gyp@0.14.0 || error_exit "Could not install node-pre-gyp"
+npm install -g @mapbox/node-pre-gyp@^1.0.0 || error_exit "Could not install node-pre-gyp"
 
 # -------------------------------
 # Setup
